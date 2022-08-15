@@ -16,30 +16,73 @@
 Servo servoBody;
 Servo servoLeftArm, servoRightArm;
 
-int bodyAngle = 0;
-int leftArmAngle = 0;
-int rightArmAngle = 0;
+int center = 90;
+
+int bodyAngle = center;
+int leftArmAngle = center;
+int rightArmAngle = center;
+
+int angleStep = 10;
+int servoDelay = 15;
+
+void init() {
+  bodyAngle = center;
+  leftArmAngle = center;
+  rightArmAngle = center;
+
+  servoBody.write(bodyAngle);
+  servoLeftArm.write(leftArmAngle);
+  servoRightArm.write(rightArmAngle);
+}
 
 void notify()
 {
-  if(Ps3.data.button.circle > 0) {
-    Serial.println("Body!");
-    bodyAngle = (bodyAngle + 1) % 180;
-    servoBody.write(bodyAngle);
-    delay(20);
+  if (Ps3.event.button_down.start) {
+    init();
   }
-  if(Ps3.data.button.triangle > 0) {
-    Serial.println("Left Atm!");
-    leftArmAngle = (leftArmAngle + 1) % 180;
+
+  if (Ps3.event.analog_changed.button.l1) {
+    Serial.println("L1");
+    leftArmAngle = min(leftArmAngle + angleStep, 180);
     servoLeftArm.write(leftArmAngle);
-    delay(20);
+    delay(servoDelay);
   }
-  if(Ps3.data.button.cross > 0) {
-    Serial.println("Right Atm!");
-    rightArmAngle = (rightArmAngle + 1) % 180;
+  if (Ps3.event.analog_changed.button.l2) {
+    Serial.println("L2");
+    leftArmAngle = max(leftArmAngle - angleStep, 0);
+    servoLeftArm.write(leftArmAngle);
+    delay(servoDelay);
+  }
+  if (Ps3.event.analog_changed.button.r1) {
+    Serial.println("R1");
+    rightArmAngle = min(rightArmAngle + angleStep, 180);
     servoRightArm.write(rightArmAngle);
-    delay(20);
+    delay(servoDelay);
   }
+  if (Ps3.event.analog_changed.button.r2) {
+    Serial.println("R2");
+    rightArmAngle = max(rightArmAngle - angleStep, 0);
+    servoRightArm.write(rightArmAngle);
+    delay(servoDelay);
+  }
+
+  if (Ps3.event.analog_changed.button.left) {
+    Serial.println("Left");
+    bodyAngle = max(bodyAngle - 1, 0);
+    servoBody.write(bodyAngle);
+    delay(servoDelay);
+  }
+  if (Ps3.event.analog_changed.button.right) {
+    Serial.println("Right");
+    bodyAngle = min(bodyAngle + 1, 180);
+    servoBody.write(bodyAngle);
+    delay(servoDelay);
+  }
+}
+
+void onConnect() {
+  Ps3.setPlayer(0);
+  Serial.println("Set Player #0");
 }
 
 void setup()
@@ -48,6 +91,7 @@ void setup()
 
   Serial.begin(115200);
   Ps3.attach(notify);
+  Ps3.attachOnConnect(onConnect);
   Ps3.begin("44:44:44:44:44:44");
 
   while(!Ps3.isConnected()) {
@@ -64,14 +108,9 @@ void setup()
   servoLeftArm.attach(PIN_LEFT_ARM, 500, 2400);
   servoRightArm.attach(PIN_RIGHT_ARM, 500, 2400);
 
-  servoBody.write(0);
-  servoLeftArm.write(0);
-  servoRightArm.write(0);
+  init();
 }
-
 
 void loop()
 {
-  delay(1000);
-  Ps3.setRumble(100, 500);
 }
