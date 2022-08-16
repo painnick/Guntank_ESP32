@@ -34,8 +34,10 @@ int rightArmAngle = center;
 int angleStep = 10;
 int servoDelay = 15;
 
-bool leftTrackrunning = false;
-bool rightTrackrunning = false;
+bool circlePress = false;
+bool triaglePress = false;
+bool squarePress = false;
+bool crossPress = false;
 
 void init() {
   bodyAngle = center;
@@ -67,38 +69,38 @@ void notify()
     fire(PIN_RIGHT_GUN);
   }
 
-  if (Ps3.event.analog_changed.button.l1) {
+  if (Ps3.event.button_down.l1) {
     Serial.println("L1");
     leftArmAngle = min(leftArmAngle + angleStep, 180);
     servoLeftArm.write(90 - leftArmAngle);
     delay(servoDelay);
   }
-  if (Ps3.event.analog_changed.button.l2) {
+  if (Ps3.event.button_down.l2) {
     Serial.println("L2");
     leftArmAngle = max(leftArmAngle - angleStep, 0);
     servoLeftArm.write(90 - leftArmAngle);
     delay(servoDelay);
   }
-  if (Ps3.event.analog_changed.button.r1) {
+  if (Ps3.event.button_down.r1) {
     Serial.println("R1");
     rightArmAngle = min(rightArmAngle + angleStep, 180);
     servoRightArm.write(rightArmAngle);
     delay(servoDelay);
   }
-  if (Ps3.event.analog_changed.button.r2) {
+  if (Ps3.event.button_down.r2) {
     Serial.println("R2");
     rightArmAngle = max(rightArmAngle - angleStep, 0);
     servoRightArm.write(rightArmAngle);
     delay(servoDelay);
   }
 
-  if (Ps3.event.analog_changed.button.left) {
+  if (Ps3.event.button_down.left) {
     Serial.println("Left");
     bodyAngle = max(bodyAngle - 1, 0);
     servoBody.write(bodyAngle);
     delay(servoDelay);
   }
-  if (Ps3.event.analog_changed.button.right) {
+  if (Ps3.event.button_down.right) {
     Serial.println("Right");
     bodyAngle = min(bodyAngle + 1, 180);
     servoBody.write(bodyAngle);
@@ -115,31 +117,46 @@ void notify()
   }
 
   if (Ps3.event.button_down.triangle) {
+    triaglePress = true;
     digitalWrite(PIN_TRACK_A1, HIGH);
     digitalWrite(PIN_TRACK_A2, LOW);
-    leftTrackrunning = true;
-  } else if (Ps3.event.button_down.square) {
-    digitalWrite(PIN_TRACK_A1, LOW);
-    digitalWrite(PIN_TRACK_A2, HIGH);
-    leftTrackrunning = true;
-  } else if (leftTrackrunning && !Ps3.event.button_down.triangle && !Ps3.event.button_down.square) {
+  }
+  if (Ps3.event.button_up.triangle) {
+    triaglePress = false;
     digitalWrite(PIN_TRACK_A1, LOW);
     digitalWrite(PIN_TRACK_A2, LOW);
-    leftTrackrunning = false;
   }
 
+  if (Ps3.event.button_down.square) {
+    squarePress = true;
+    digitalWrite(PIN_TRACK_A1, LOW);
+    digitalWrite(PIN_TRACK_A2, HIGH);
+  }
+  if (Ps3.event.button_up.square) {
+    squarePress = true;
+    digitalWrite(PIN_TRACK_A1, LOW);
+    digitalWrite(PIN_TRACK_A2, LOW);
+  }
+  
   if (Ps3.event.button_down.circle) {
+    circlePress = true;
     digitalWrite(PIN_TRACK_B1, HIGH);
     digitalWrite(PIN_TRACK_B2, LOW);
-    rightTrackrunning = true;
-  } else if (Ps3.event.button_down.cross) {
-    digitalWrite(PIN_TRACK_B1, LOW);
-    digitalWrite(PIN_TRACK_B2, HIGH);
-    rightTrackrunning = true;
-  } else if (rightTrackrunning && !Ps3.event.button_down.circle && !Ps3.event.button_down.cross) {
+  }
+  if (Ps3.event.button_up.circle) {
+    circlePress = true;
     digitalWrite(PIN_TRACK_B1, LOW);
     digitalWrite(PIN_TRACK_B2, LOW);
-    rightTrackrunning = false;
+  }
+  if (Ps3.event.button_down.cross) {
+    circlePress = false;
+    digitalWrite(PIN_TRACK_B1, LOW);
+    digitalWrite(PIN_TRACK_B2, HIGH);
+  }
+  if (Ps3.event.button_up.cross) {
+    circlePress = false;
+    digitalWrite(PIN_TRACK_B1, LOW);
+    digitalWrite(PIN_TRACK_B2, LOW);
   }
 
   // if( battery != Ps3.data.status.battery ){
