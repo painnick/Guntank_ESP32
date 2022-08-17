@@ -31,7 +31,7 @@ int bodyAngle = center;
 int leftArmAngle = center;
 int rightArmAngle = center;
 
-int angleStep = 10;
+int angleStep = 5;
 int servoDelay = 15;
 
 bool circlePress = false;
@@ -96,13 +96,13 @@ void notify()
 
   if (Ps3.event.button_down.left) {
     Serial.println("Left");
-    bodyAngle = max(bodyAngle - 1, 0);
+    bodyAngle = max(bodyAngle - 5, 0);
     servoBody.write(bodyAngle);
     delay(servoDelay);
   }
   if (Ps3.event.button_down.right) {
     Serial.println("Right");
-    bodyAngle = min(bodyAngle + 1, 180);
+    bodyAngle = min(bodyAngle + 5, 180);
     servoBody.write(bodyAngle);
     delay(servoDelay);
   }
