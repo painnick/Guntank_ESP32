@@ -107,56 +107,32 @@ void notify()
     delay(servoDelay);
   }
 
-  if (Ps3.event.button_down.l3) {
-    digitalWrite(PIN_TRACK_A1, LOW);
-    digitalWrite(PIN_TRACK_A2, LOW);
-  }
-  if (Ps3.event.button_down.r3) {
+  if (abs(Ps3.event.analog_changed.stick.ly) < 10) {
     digitalWrite(PIN_TRACK_B1, LOW);
-    digitalWrite(PIN_TRACK_B2, LOW);
+    digitalWrite(PIN_TRACK_B2, LOW);    
+  } else {
+    if (Ps3.event.analog_changed.stick.ly < -10) {
+      digitalWrite(PIN_TRACK_B1, HIGH);
+      digitalWrite(PIN_TRACK_B2, LOW);
+    }
+    else if (Ps3.event.analog_changed.stick.ly > 10) {
+      digitalWrite(PIN_TRACK_B1, LOW);
+      digitalWrite(PIN_TRACK_B2, HIGH);
+    }
   }
 
-  if (Ps3.event.button_down.triangle) {
-    triaglePress = true;
-    digitalWrite(PIN_TRACK_A1, HIGH);
-    digitalWrite(PIN_TRACK_A2, LOW);
-  }
-  if (Ps3.event.button_up.triangle) {
-    triaglePress = false;
+  if (abs(Ps3.event.analog_changed.stick.ry) < 10) {
     digitalWrite(PIN_TRACK_A1, LOW);
-    digitalWrite(PIN_TRACK_A2, LOW);
-  }
-
-  if (Ps3.event.button_down.square) {
-    squarePress = true;
-    digitalWrite(PIN_TRACK_A1, LOW);
-    digitalWrite(PIN_TRACK_A2, HIGH);
-  }
-  if (Ps3.event.button_up.square) {
-    squarePress = true;
-    digitalWrite(PIN_TRACK_A1, LOW);
-    digitalWrite(PIN_TRACK_A2, LOW);
-  }
-  
-  if (Ps3.event.button_down.circle) {
-    circlePress = true;
-    digitalWrite(PIN_TRACK_B1, HIGH);
-    digitalWrite(PIN_TRACK_B2, LOW);
-  }
-  if (Ps3.event.button_up.circle) {
-    circlePress = true;
-    digitalWrite(PIN_TRACK_B1, LOW);
-    digitalWrite(PIN_TRACK_B2, LOW);
-  }
-  if (Ps3.event.button_down.cross) {
-    circlePress = false;
-    digitalWrite(PIN_TRACK_B1, LOW);
-    digitalWrite(PIN_TRACK_B2, HIGH);
-  }
-  if (Ps3.event.button_up.cross) {
-    circlePress = false;
-    digitalWrite(PIN_TRACK_B1, LOW);
-    digitalWrite(PIN_TRACK_B2, LOW);
+    digitalWrite(PIN_TRACK_A2, LOW);    
+  } else {
+    if (Ps3.event.analog_changed.stick.ry < -10) {
+      digitalWrite(PIN_TRACK_A1, HIGH);
+      digitalWrite(PIN_TRACK_A2, LOW);
+    }
+    else if (Ps3.event.analog_changed.stick.ry > 10) {
+      digitalWrite(PIN_TRACK_A1, LOW);
+      digitalWrite(PIN_TRACK_A2, HIGH);
+    }
   }
 
   // if( battery != Ps3.data.status.battery ){
@@ -172,13 +148,23 @@ void notify()
   // }
 }
 
+void onConnect();
+void onDisconnect();
+
+void initPs3() {
+  Ps3.attach(notify);
+  Ps3.attachOnConnect(onConnect);
+  Ps3.attachOnDisconnect(onDisconnect);
+  Ps3.begin("44:44:44:44:44:44");
+}
+
 void onConnect() {
   String address = Ps3.getAddress();
 
   Serial.print("The ESP32's Bluetooth MAC address is: ");
   Serial.println(address);
 
-  Ps3.setPlayer(0);
+  Ps3.setPlayer(1);
 
   servoBody.attach(PIN_BODY, 500, 2400);
   servoLeftArm.attach(PIN_LEFT_ARM, 500, 2400);
@@ -195,18 +181,18 @@ void onConnect() {
   init();
 }
 
-void setup()
-{
-  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
-
-  Serial.begin(115200);
-  Ps3.attach(notify);
-  Ps3.attachOnConnect(onConnect);
-  Ps3.begin("44:44:44:44:44:44");
+void onDisconnect() {
+  Ps3.end();
+  initPs3();
 }
 
-void loop()
-{
+void setup() {
+  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
+  Serial.begin(115200);
+  initPs3();
+}
+
+void loop() {
   if(!Ps3.isConnected())
     return;
 }
