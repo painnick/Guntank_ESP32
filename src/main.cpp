@@ -164,7 +164,7 @@ void onConnect() {
   Serial.print("The ESP32's Bluetooth MAC address is: ");
   Serial.println(address);
 
-  Ps3.setPlayer(1);
+  init();
 
   servoBody.attach(PIN_BODY, 500, 2400);
   servoLeftArm.attach(PIN_LEFT_ARM, 500, 2400);
