@@ -9,7 +9,7 @@
 // These are all GPIO pins on the ESP32
 // Recommended pins include 2,4,12-19,21-23,25-27,32-33
 // for the ESP32-S2 the GPIO pins are 1-21,26,33-42
-#define PIN_LEFT_ARM 15
+#define PIN_LEFT_ARM 17
 #define PIN_RIGHT_ARM 16
 #define PIN_BODY 14
 
@@ -62,49 +62,43 @@ void notify()
     init();
   }
 
-  if (Ps3.event.button_down.l3) {
+  if (Ps3.event.button_down.cross) {
     fire(PIN_LEFT_GUN);
   }
-  if (Ps3.event.button_down.r3) {
+  if (Ps3.event.button_down.circle) {
     fire(PIN_RIGHT_GUN);
   }
 
-  if (Ps3.event.button_down.l1) {
+  if (Ps3.event.analog_changed.button.l1) {
     Serial.println("L1");
-    leftArmAngle = min(leftArmAngle + angleStep, 180);
-    servoLeftArm.write(90 - leftArmAngle);
-    delay(servoDelay);
+    leftArmAngle = max(leftArmAngle - angleStep, center - 45);
+    servoLeftArm.write(leftArmAngle);
   }
-  if (Ps3.event.button_down.l2) {
+  if (Ps3.event.analog_changed.button.l2) {
     Serial.println("L2");
-    leftArmAngle = max(leftArmAngle - angleStep, 0);
-    servoLeftArm.write(90 - leftArmAngle);
-    delay(servoDelay);
+    leftArmAngle = min(leftArmAngle + angleStep, center + 45);
+    servoLeftArm.write(leftArmAngle);
   }
-  if (Ps3.event.button_down.r1) {
+  if (Ps3.event.analog_changed.button.r1) {
     Serial.println("R1");
-    rightArmAngle = min(rightArmAngle + angleStep, 180);
+    rightArmAngle = min(rightArmAngle + angleStep, center + 45);
     servoRightArm.write(rightArmAngle);
-    delay(servoDelay);
   }
-  if (Ps3.event.button_down.r2) {
+  if (Ps3.event.analog_changed.button.r2) {
     Serial.println("R2");
-    rightArmAngle = max(rightArmAngle - angleStep, 0);
+    rightArmAngle = max(rightArmAngle - angleStep, center - 45);
     servoRightArm.write(rightArmAngle);
-    delay(servoDelay);
   }
 
-  if (Ps3.event.button_down.left) {
+  if (Ps3.event.analog_changed.button.left) {
     Serial.println("Left");
-    bodyAngle = max(bodyAngle - 5, 0);
-    servoBody.write(bodyAngle);
-    delay(servoDelay);
-  }
-  if (Ps3.event.button_down.right) {
-    Serial.println("Right");
     bodyAngle = min(bodyAngle + 5, 180);
     servoBody.write(bodyAngle);
-    delay(servoDelay);
+  }
+  if (Ps3.event.analog_changed.button.right) {
+    Serial.println("Right");
+    bodyAngle = max(bodyAngle - 5, 0);
+    servoBody.write(bodyAngle);
   }
 
   if (abs(Ps3.event.analog_changed.stick.ly) < 10) {
@@ -189,6 +183,7 @@ void onDisconnect() {
 void setup() {
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
   Serial.begin(115200);
+  init();
   initPs3();
 }
 
