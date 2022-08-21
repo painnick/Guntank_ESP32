@@ -21,6 +21,10 @@
 #define PIN_TRACK_B1 25
 #define PIN_TRACK_B2 26
 
+#define CHANNEL_A1 12
+#define CHANNEL_A2 13
+#define CHANNEL_B1 14
+#define CHANNEL_B2 15
 
 Servo servoBody;
 Servo servoLeftArm, servoRightArm;
@@ -101,45 +105,35 @@ void notify()
     servoBody.write(bodyAngle);
   }
 
-  if (abs(Ps3.event.analog_changed.stick.ly) < 10) {
-    digitalWrite(PIN_TRACK_B1, LOW);
-    digitalWrite(PIN_TRACK_B2, LOW);    
+  int absLy = abs(Ps3.event.analog_changed.stick.ly);
+  if (absLy < 10) {
+    ledcWrite(CHANNEL_B1, 0);
+    ledcWrite(CHANNEL_B2, 0);
   } else {
     if (Ps3.event.analog_changed.stick.ly < -10) {
-      digitalWrite(PIN_TRACK_B1, HIGH);
-      digitalWrite(PIN_TRACK_B2, LOW);
+      ledcWrite(CHANNEL_B1, absLy);
+      ledcWrite(CHANNEL_B2, 0);
     }
     else if (Ps3.event.analog_changed.stick.ly > 10) {
-      digitalWrite(PIN_TRACK_B1, LOW);
-      digitalWrite(PIN_TRACK_B2, HIGH);
+      ledcWrite(CHANNEL_B1, 0);
+      ledcWrite(CHANNEL_B2, absLy);
     }
   }
 
-  if (abs(Ps3.event.analog_changed.stick.ry) < 10) {
-    digitalWrite(PIN_TRACK_A1, LOW);
-    digitalWrite(PIN_TRACK_A2, LOW);    
+  int absRy = abs(Ps3.event.analog_changed.stick.ry);
+  if (absRy < 10) {
+    ledcWrite(CHANNEL_A1, 0);
+    ledcWrite(CHANNEL_A2, 0);    
   } else {
     if (Ps3.event.analog_changed.stick.ry < -10) {
-      digitalWrite(PIN_TRACK_A1, HIGH);
-      digitalWrite(PIN_TRACK_A2, LOW);
+      ledcWrite(CHANNEL_A1, absRy);
+      ledcWrite(CHANNEL_A2, 0);
     }
     else if (Ps3.event.analog_changed.stick.ry > 10) {
-      digitalWrite(PIN_TRACK_A1, LOW);
-      digitalWrite(PIN_TRACK_A2, HIGH);
+      ledcWrite(CHANNEL_A1, 0);
+      ledcWrite(CHANNEL_A2, absRy);
     }
   }
-
-  // if( battery != Ps3.data.status.battery ){
-  //     battery = Ps3.data.status.battery;
-  //     Serial.print("The controller battery is ");
-  //     if( battery == ps3_status_battery_charging )      Serial.println("charging");
-  //     else if( battery == ps3_status_battery_full )     Serial.println("FULL");
-  //     else if( battery == ps3_status_battery_high )     Serial.println("HIGH");
-  //     else if( battery == ps3_status_battery_low)       Serial.println("LOW");
-  //     else if( battery == ps3_status_battery_dying )    Serial.println("DYING");
-  //     else if( battery == ps3_status_battery_shutdown ) Serial.println("SHUTDOWN");
-  //     else Serial.println("UNDEFINED");
-  // }
 }
 
 void onConnect();
@@ -167,10 +161,20 @@ void onConnect() {
   pinMode(PIN_LEFT_GUN, OUTPUT);
   pinMode(PIN_RIGHT_GUN, OUTPUT);
 
-  pinMode(PIN_TRACK_A1, OUTPUT);
-  pinMode(PIN_TRACK_A2, OUTPUT);
-  pinMode(PIN_TRACK_B1, OUTPUT);
-  pinMode(PIN_TRACK_B2, OUTPUT);
+
+  ledcSetup(CHANNEL_A1, 5000, 7); // 0~127
+  ledcSetup(CHANNEL_A2, 5000, 7); // 0~127
+  ledcSetup(CHANNEL_B1, 5000, 7); // 0~127
+  ledcSetup(CHANNEL_B2, 5000, 7); // 0~127
+
+  // pinMode(PIN_TRACK_A1, OUTPUT);
+  // pinMode(PIN_TRACK_A2, OUTPUT);
+  // pinMode(PIN_TRACK_B1, OUTPUT);
+  // pinMode(PIN_TRACK_B2, OUTPUT);
+  ledcAttachPin(PIN_TRACK_A1, CHANNEL_A1);
+  ledcAttachPin(PIN_TRACK_A2, CHANNEL_A2);
+  ledcAttachPin(PIN_TRACK_B1, CHANNEL_B1);
+  ledcAttachPin(PIN_TRACK_B2, CHANNEL_B2);
 
   init();
 }
