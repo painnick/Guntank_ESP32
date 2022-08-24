@@ -6,11 +6,13 @@
 #include "soc/soc.h"             // disable brownout problems
 #include "soc/rtc_cntl_reg.h"    // disable brownout problems
 
+#include "DFMiniMp3.h"
+
 // These are all GPIO pins on the ESP32
 // Recommended pins include 2,4,12-19,21-23,25-27,32-33
 // for the ESP32-S2 the GPIO pins are 1-21,26,33-42
-#define PIN_LEFT_ARM 17
-#define PIN_RIGHT_ARM 16
+#define PIN_LEFT_ARM 18
+#define PIN_RIGHT_ARM 19
 #define PIN_BODY 14
 
 #define PIN_LEFT_GUN 12
@@ -21,6 +23,10 @@
 #define PIN_TRACK_B1 25
 #define PIN_TRACK_B2 26
 
+#define PIN_RX 16 // FIXED
+#define PIN_TX 17 // FIXED
+
+
 #define CHANNEL_A1 12
 #define CHANNEL_A2 13
 #define CHANNEL_B1 14
@@ -28,6 +34,12 @@
 
 Servo servoBody;
 Servo servoLeftArm, servoRightArm;
+
+class Mp3Notify;
+typedef DFMiniMp3<HardwareSerial, Mp3Notify> DfMp3;
+HardwareSerial mySerial(2); // 16, 17
+DfMp3 dfmp3(mySerial);
+int volume = 10; // 0~30
 
 int center = 90;
 
@@ -54,9 +66,12 @@ void init() {
 }
 
 void fire(int pin) {
-  digitalWrite(pin, HIGH);
-  delay(100);
-  digitalWrite(pin, LOW);
+  for (int i = 0; i < 5; i ++) {
+    digitalWrite(pin, HIGH);
+    delay(100);
+    digitalWrite(pin, LOW);
+    delay(100);
+  }
 }
 
 int battery = 0;
@@ -66,11 +81,17 @@ void notify()
     init();
   }
 
+  if ((Ps3.event.button_down.cross) || (Ps3.event.button_down.circle)) {
+    dfmp3.playRandomTrackFromAll();
+  }
   if (Ps3.event.button_down.cross) {
     fire(PIN_LEFT_GUN);
   }
   if (Ps3.event.button_down.circle) {
     fire(PIN_RIGHT_GUN);
+  }
+  if ((Ps3.event.button_down.cross) || (Ps3.event.button_down.circle)) {
+    dfmp3.stop();
   }
 
   if (Ps3.event.analog_changed.button.l1) {
@@ -103,6 +124,15 @@ void notify()
     Serial.println("Right");
     bodyAngle = max(bodyAngle - 5, 0);
     servoBody.write(bodyAngle);
+  }
+
+  if (Ps3.event.analog_changed.button.up) {
+    volume = min(volume + 5, 30);
+    dfmp3.setVolume(volume);
+  }
+  if (Ps3.event.analog_changed.button.down) {
+    volume = max(volume - 5, 0);
+    dfmp3.setVolume(volume);
   }
 
   int absLy = abs(Ps3.event.analog_changed.stick.ly);
@@ -189,9 +219,97 @@ void setup() {
   Serial.begin(115200);
   init();
   initPs3();
+
+  dfmp3.begin(9600, 1000);
+  dfmp3.reset();
+
+  dfmp3.setVolume(volume);
 }
 
 void loop() {
   if(!Ps3.isConnected())
     return;
+
+  dfmp3.loop();
+  delay(1);
 }
+
+//----------------------------------------------------------------------------------
+class Mp3Notify
+{
+public:
+  static void PrintlnSourceAction(DfMp3_PlaySources source, const char *action)
+  {
+#ifdef _DEBUG
+    if (source & DfMp3_PlaySources_Sd)
+    {
+      Serial.print("SD Card, ");
+    }
+    if (source & DfMp3_PlaySources_Usb)
+    {
+      Serial.print("USB Disk, ");
+    }
+    if (source & DfMp3_PlaySources_Flash)
+    {
+      Serial.print("Flash, ");
+    }
+    Serial.println(action);
+#endif
+  }
+  static void OnError(DfMp3 &mp3, uint16_t errorCode)
+  {
+#ifdef _DEBUG
+    // see DfMp3_Error for code meaning
+    Serial.println();
+    Serial.print("Com Error ");
+    switch (errorCode)
+    {
+    case DfMp3_Error_Busy:
+      Serial.println("Busy");
+      break;
+    case DfMp3_Error_Sleeping:
+      Serial.println("Sleeping");
+      break;
+    case DfMp3_Error_SerialWrongStack:
+      Serial.println("Serial Wrong Stack");
+      break;
+
+    case DfMp3_Error_RxTimeout:
+      Serial.println("Rx Timeout!!!");
+      break;
+    case DfMp3_Error_PacketSize:
+      Serial.println("Wrong Packet Size!!!");
+      break;
+    case DfMp3_Error_PacketHeader:
+      Serial.println("Wrong Packet Header!!!");
+      break;
+    case DfMp3_Error_PacketChecksum:
+      Serial.println("Wrong Packet Checksum!!!");
+      break;
+
+    default:
+      Serial.println(errorCode, HEX);
+      break;
+    }
+#endif
+  }
+  static void OnPlayFinished(DfMp3 &mp3, DfMp3_PlaySources source, uint16_t track)
+  {
+#ifdef _DEBUG
+    Serial.print("Play finished for #");
+    Serial.println(track);
+#endif
+  }
+  static void OnPlaySourceOnline(DfMp3 &mp3, DfMp3_PlaySources source)
+  {
+    PrintlnSourceAction(source, "online");
+  }
+  static void OnPlaySourceInserted(DfMp3 &mp3, DfMp3_PlaySources source)
+  {
+    PrintlnSourceAction(source, "inserted");
+  }
+  static void OnPlaySourceRemoved(DfMp3 &mp3, DfMp3_PlaySources source)
+  {
+    PrintlnSourceAction(source, "removed");
+  }
+};
