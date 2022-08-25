@@ -66,11 +66,11 @@ void init() {
 }
 
 void fire(int pin) {
-  for (int i = 0; i < 5; i ++) {
+  for (int i = 0; i < 4; i ++) {
     digitalWrite(pin, HIGH);
-    delay(100);
+    delay(80);
     digitalWrite(pin, LOW);
-    delay(100);
+    delay(80);
   }
 }
 
