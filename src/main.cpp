@@ -26,6 +26,8 @@
 #define PIN_RX 16 // FIXED
 #define PIN_TX 17 // FIXED
 
+#define PIN_POWER 2
+
 
 #define CHANNEL_A1 12
 #define CHANNEL_A2 13
@@ -63,6 +65,11 @@ void init() {
   servoBody.write(bodyAngle);
   servoLeftArm.write(leftArmAngle);
   servoRightArm.write(rightArmAngle);
+
+  pinMode(PIN_POWER, OUTPUT);
+  digitalWrite(PIN_POWER, HIGH);
+
+  dfmp3.playMp3FolderTrack(3);
 }
 
 void fire(int pin) {
@@ -77,12 +84,14 @@ void fire(int pin) {
 int battery = 0;
 void notify()
 {
+  // RESET
   if (Ps3.event.button_down.start) {
     init();
   }
 
+  // Gatling
   if ((Ps3.event.button_down.cross) || (Ps3.event.button_down.circle)) {
-    dfmp3.playRandomTrackFromAll();
+    dfmp3.playMp3FolderTrack(1);
   }
   if (Ps3.event.button_down.cross) {
     fire(PIN_LEFT_GUN);
@@ -93,6 +102,12 @@ void notify()
   if ((Ps3.event.button_down.cross) || (Ps3.event.button_down.circle)) {
     dfmp3.stop();
   }
+
+  // Cannon
+  if ((Ps3.event.button_down.square) || (Ps3.event.button_down.triangle)) {
+    dfmp3.playMp3FolderTrack(2);
+  }
+
 
   if (Ps3.event.analog_changed.button.l1) {
     Serial.println("L1");
@@ -177,6 +192,8 @@ void initPs3() {
 }
 
 void onConnect() {
+  Serial.println("Connected");
+
   String address = Ps3.getAddress();
 
   Serial.print("The ESP32's Bluetooth MAC address is: ");
@@ -207,9 +224,12 @@ void onConnect() {
   ledcAttachPin(PIN_TRACK_B2, CHANNEL_B2);
 
   init();
+
+  dfmp3.playMp3FolderTrack(3);
 }
 
 void onDisconnect() {
+  Serial.println("Disconnected");
   Ps3.end();
   initPs3();
 }
