@@ -142,11 +142,11 @@ void notify()
   }
 
   if (Ps3.event.analog_changed.button.up) {
-    volume = min(volume + 5, 30);
+    volume = min(volume + 2, 20);
     dfmp3.setVolume(volume);
   }
   if (Ps3.event.analog_changed.button.down) {
-    volume = max(volume - 5, 0);
+    volume = max(volume - 2, 0);
     dfmp3.setVolume(volume);
   }
 
