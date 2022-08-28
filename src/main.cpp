@@ -106,6 +106,21 @@ void notify()
   // Cannon
   if ((Ps3.event.button_down.square) || (Ps3.event.button_down.triangle)) {
     dfmp3.playMp3FolderTrack(2);
+
+    // Back
+    ledcWrite(CHANNEL_B1, 0);
+    ledcWrite(CHANNEL_B2, 255);
+
+    ledcWrite(CHANNEL_A1, 0);
+    ledcWrite(CHANNEL_A2, 255);
+
+    delay(10);
+
+    ledcWrite(CHANNEL_B1, 0);
+    ledcWrite(CHANNEL_B2, 0);
+
+    ledcWrite(CHANNEL_A1, 0);
+    ledcWrite(CHANNEL_A2, 0);
   }
 
 
