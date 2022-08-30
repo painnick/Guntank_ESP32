@@ -62,9 +62,9 @@ void init() {
   leftArmAngle = center;
   rightArmAngle = center;
 
-  servoBody.write(bodyAngle);
-  servoLeftArm.write(leftArmAngle);
-  servoRightArm.write(rightArmAngle);
+  servoBody.attach(PIN_BODY, 500, 2400);
+  servoLeftArm.attach(PIN_LEFT_ARM, 500, 2400);
+  servoRightArm.attach(PIN_RIGHT_ARM, 500, 2400);
 
   pinMode(PIN_POWER, OUTPUT);
   digitalWrite(PIN_POWER, HIGH);
@@ -124,22 +124,22 @@ void notify()
   }
 
 
-  if (Ps3.event.analog_changed.button.l1) {
+  if (Ps3.event.button_down.l1) {
     Serial.println("L1");
     leftArmAngle = max(leftArmAngle - angleStep, center - 45);
     servoLeftArm.write(leftArmAngle);
   }
-  if (Ps3.event.analog_changed.button.l2) {
+  if (Ps3.event.button_down.l2) {
     Serial.println("L2");
     leftArmAngle = min(leftArmAngle + angleStep, center + 45);
     servoLeftArm.write(leftArmAngle);
   }
-  if (Ps3.event.analog_changed.button.r1) {
+  if (Ps3.event.button_down.r1) {
     Serial.println("R1");
     rightArmAngle = min(rightArmAngle + angleStep, center + 45);
     servoRightArm.write(rightArmAngle);
   }
-  if (Ps3.event.analog_changed.button.r2) {
+  if (Ps3.event.button_down.r2) {
     Serial.println("R2");
     rightArmAngle = max(rightArmAngle - angleStep, center - 45);
     servoRightArm.write(rightArmAngle);
