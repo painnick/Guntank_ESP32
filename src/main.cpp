@@ -34,6 +34,8 @@
 #define CHANNEL_B1 14
 #define CHANNEL_B2 15
 
+#define MAX_VOLUME 18
+
 Servo servoBody;
 Servo servoLeftArm, servoRightArm;
 
@@ -41,7 +43,7 @@ class Mp3Notify;
 typedef DFMiniMp3<HardwareSerial, Mp3Notify> DfMp3;
 HardwareSerial mySerial(2); // 16, 17
 DfMp3 dfmp3(mySerial);
-int volume = 10; // 0~30
+int volume = MAX_VOLUME; // 0~30
 
 int center = 90;
 
@@ -65,6 +67,10 @@ void init() {
   servoBody.attach(PIN_BODY, 500, 2400);
   servoLeftArm.attach(PIN_LEFT_ARM, 500, 2400);
   servoRightArm.attach(PIN_RIGHT_ARM, 500, 2400);
+
+  servoBody.write(center);
+  servoLeftArm.write(center);
+  servoRightArm.write(center);
 
   pinMode(PIN_POWER, OUTPUT);
   digitalWrite(PIN_POWER, HIGH);
@@ -98,9 +104,6 @@ void notify()
   }
   if (Ps3.event.button_down.circle) {
     fire(PIN_RIGHT_GUN);
-  }
-  if ((Ps3.event.button_down.cross) || (Ps3.event.button_down.circle)) {
-    dfmp3.stop();
   }
 
   // Cannon
@@ -145,19 +148,21 @@ void notify()
     servoRightArm.write(rightArmAngle);
   }
 
-  if (Ps3.event.analog_changed.button.left) {
+  // Body
+  if (Ps3.event.button_down.left) {
     Serial.println("Left");
     bodyAngle = min(bodyAngle + 5, 180);
     servoBody.write(bodyAngle);
   }
-  if (Ps3.event.analog_changed.button.right) {
+  if (Ps3.event.button_down.right) {
     Serial.println("Right");
     bodyAngle = max(bodyAngle - 5, 0);
     servoBody.write(bodyAngle);
   }
 
+  // Volume
   if (Ps3.event.analog_changed.button.up) {
-    volume = min(volume + 2, 20);
+    volume = min(volume + 2, MAX_VOLUME);
     dfmp3.setVolume(volume);
   }
   if (Ps3.event.analog_changed.button.down) {
@@ -165,6 +170,7 @@ void notify()
     dfmp3.setVolume(volume);
   }
 
+  // Track
   int absLy = abs(Ps3.event.analog_changed.stick.ly);
   if (absLy < 10) {
     ledcWrite(CHANNEL_B1, 0);
@@ -257,6 +263,10 @@ void setup() {
 
   dfmp3.begin(9600, 1000);
   dfmp3.reset();
+
+  while(!dfmp3.isOnline()) {
+    delay(10);
+  }
 
   dfmp3.setVolume(volume);
 }
