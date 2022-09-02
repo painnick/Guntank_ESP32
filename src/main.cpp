@@ -8,25 +8,50 @@
 
 #include "DFMiniMp3.h"
 
+#ifndef BUILD_ENV_NAME
+    #error "Add -D BUILD_ENV_NAME=$PIOENV to platformio.ini build_flags"
+#endif
+
 // These are all GPIO pins on the ESP32
 // Recommended pins include 2,4,12-19,21-23,25-27,32-33
 // for the ESP32-S2 the GPIO pins are 1-21,26,33-42
-#define PIN_LEFT_ARM 18
-#define PIN_RIGHT_ARM 19
-#define PIN_BODY 14
+#if BUILD_ENV_NAME==nodemcu_32s
+  #define PIN_LEFT_ARM 18
+  #define PIN_RIGHT_ARM 19
+  #define PIN_BODY 14
 
-#define PIN_LEFT_GUN 12
-#define PIN_RIGHT_GUN 13
+  #define PIN_LEFT_GUN 12
+  #define PIN_RIGHT_GUN 13
 
-#define PIN_TRACK_A1 32
-#define PIN_TRACK_A2 33
-#define PIN_TRACK_B1 25
-#define PIN_TRACK_B2 26
+  #define PIN_TRACK_A1 32
+  #define PIN_TRACK_A2 33
+  #define PIN_TRACK_B1 25
+  #define PIN_TRACK_B2 26
 
-#define PIN_RX 16 // FIXED
-#define PIN_TX 17 // FIXED
+  #define PIN_RX 16 // FIXED
+  #define PIN_TX 17 // FIXED
 
-#define PIN_POWER 2
+  #define PIN_POWER 2
+#elif BUILD_ENV_NAME==wemos_d1_mini32
+  #define PIN_LEFT_ARM 25
+  #define PIN_RIGHT_ARM 27
+  #define PIN_BODY 26
+
+  #define PIN_LEFT_GUN 32
+  #define PIN_RIGHT_GUN 21
+
+  #define PIN_TRACK_A1 19
+  #define PIN_TRACK_A2 33
+  #define PIN_TRACK_B1 23
+  #define PIN_TRACK_B2 32
+
+  #define PIN_RX 16 // FIXED
+  #define PIN_TX 17 // FIXED
+
+  #define PIN_POWER 2
+#else
+  #error "Unsupported Env"
+#endif
 
 
 #define CHANNEL_A1 12
@@ -231,18 +256,22 @@ void onConnect() {
 
 
   ledcSetup(CHANNEL_A1, 5000, 7); // 0~127
+  Serial.println("Setup CHANNEL_A1");
   ledcSetup(CHANNEL_A2, 5000, 7); // 0~127
+  Serial.println("Setup CHANNEL_A2");
   ledcSetup(CHANNEL_B1, 5000, 7); // 0~127
+  Serial.println("Setup CHANNEL_B1");
   ledcSetup(CHANNEL_B2, 5000, 7); // 0~127
+  Serial.println("Setup CHANNEL_B2");
 
-  // pinMode(PIN_TRACK_A1, OUTPUT);
-  // pinMode(PIN_TRACK_A2, OUTPUT);
-  // pinMode(PIN_TRACK_B1, OUTPUT);
-  // pinMode(PIN_TRACK_B2, OUTPUT);
   ledcAttachPin(PIN_TRACK_A1, CHANNEL_A1);
+  Serial.println("Attach CHANNEL_A1");
   ledcAttachPin(PIN_TRACK_A2, CHANNEL_A2);
+  Serial.println("Attach CHANNEL_A2");
   ledcAttachPin(PIN_TRACK_B1, CHANNEL_B1);
+  Serial.println("Attach CHANNEL_B1");
   ledcAttachPin(PIN_TRACK_B2, CHANNEL_B2);
+  Serial.println("Attach CHANNEL_B2");
 
   init();
 
