@@ -28,7 +28,7 @@
 
 #define PIN_POWER 2
 
-// #define PIN_CANNON 4
+#define PIN_CANNON 4
 
 // FREE 23
 
@@ -79,7 +79,7 @@ void init() {
   pinMode(PIN_POWER, OUTPUT);
   digitalWrite(PIN_POWER, HIGH);
 
-  // pinMode(PIN_CANNON, OUTPUT);
+  pinMode(PIN_CANNON, OUTPUT);
 
   dfmp3.playMp3FolderTrack(3);
 }
@@ -116,7 +116,7 @@ void notify()
   if ((Ps3.event.button_down.square) || (Ps3.event.button_down.triangle)) {
     dfmp3.playMp3FolderTrack(2);
 
-    // digitalWrite(PIN_CANNON, HIGH);
+    digitalWrite(PIN_CANNON, HIGH);
 
     // Back
     ledcWrite(CHANNEL_B1, 0);
@@ -133,8 +133,8 @@ void notify()
     ledcWrite(CHANNEL_A1, 0);
     ledcWrite(CHANNEL_A2, 0);
 
-    // delay(300);
-    // digitalWrite(PIN_CANNON, LOW);
+    delay(300);
+    digitalWrite(PIN_CANNON, LOW);
   }
 
 
