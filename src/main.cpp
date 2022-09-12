@@ -271,6 +271,8 @@ void onDisconnect() {
 }
 
 void setup() {
+  esp_log_level_set("*", ESP_LOG_DEBUG);
+  
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
   Serial.begin(115200);
   init();
