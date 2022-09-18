@@ -15,13 +15,13 @@
 #define PIN_RIGHT_ARM 25
 #define PIN_BODY 27
 
-#define PIN_LEFT_GUN 21
-#define PIN_RIGHT_GUN 32
+#define PIN_LEFT_GUN 32
+#define PIN_RIGHT_GUN 21
 
-#define PIN_TRACK_A1 26
-#define PIN_TRACK_A2 18
-#define PIN_TRACK_B1 33
-#define PIN_TRACK_B2 19
+#define PIN_TRACK_A1 33
+#define PIN_TRACK_A2 19
+#define PIN_TRACK_B1 26
+#define PIN_TRACK_B2 18
 
 #define PIN_RX 16 // FIXED
 #define PIN_TX 17 // FIXED
@@ -140,22 +140,22 @@ void notify()
 
   if (Ps3.event.button_down.l1) {
     Serial.println("L1");
-    leftArmAngle = max(leftArmAngle - angleStep, center - 45);
+    leftArmAngle = min(leftArmAngle + angleStep, center + 45);
     servoLeftArm.write(leftArmAngle);
   }
   if (Ps3.event.button_down.l2) {
     Serial.println("L2");
-    leftArmAngle = min(leftArmAngle + angleStep, center + 45);
+    leftArmAngle = max(leftArmAngle - angleStep, center - 45);
     servoLeftArm.write(leftArmAngle);
   }
   if (Ps3.event.button_down.r1) {
     Serial.println("R1");
-    rightArmAngle = min(rightArmAngle + angleStep, center + 45);
+    rightArmAngle = max(rightArmAngle - angleStep, center - 45);
     servoRightArm.write(rightArmAngle);
   }
   if (Ps3.event.button_down.r2) {
     Serial.println("R2");
-    rightArmAngle = max(rightArmAngle - angleStep, center - 45);
+    rightArmAngle = min(rightArmAngle + angleStep, center + 45);
     servoRightArm.write(rightArmAngle);
   }
 
