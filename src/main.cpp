@@ -11,27 +11,50 @@
 // These are all GPIO pins on the ESP32
 // Recommended pins include 2,4,12-19,21-23,25-27,32-33
 // for the ESP32-S2 the GPIO pins are 1-21,26,33-42
-#define PIN_LEFT_ARM 22
-#define PIN_RIGHT_ARM 25
-#define PIN_BODY 27
-
-#define PIN_LEFT_GUN 32
-#define PIN_RIGHT_GUN 21
-
-#define PIN_TRACK_A1 33
-#define PIN_TRACK_A2 19
-#define PIN_TRACK_B1 26
-#define PIN_TRACK_B2 18
 
 #define PIN_RX 16 // FIXED
 #define PIN_TX 17 // FIXED
 
-#define PIN_POWER 2
+#ifdef BUILD_ENV_V2
+  #define PIN_LEFT_ARM 22
+  #define PIN_RIGHT_ARM 25
+  #define PIN_BODY 27
 
-#define PIN_CANNON 4
+  #define PIN_LEFT_GUN 32
+  #define PIN_RIGHT_GUN 21
 
-// FREE 23
+  #define PIN_TRACK_A1 33
+  #define PIN_TRACK_A2 19
+  #define PIN_TRACK_B1 26
+  #define PIN_TRACK_B2 18
 
+  #define PIN_POWER 2
+
+  #define PIN_CANNON 4
+
+  // FREE 23
+#else
+  #ifdef BUILD_ENV_V1
+    #define PIN_LEFT_ARM 18
+    #define PIN_RIGHT_ARM 19
+    #define PIN_BODY 14
+
+    #define PIN_LEFT_GUN 12
+    #define PIN_RIGHT_GUN 13
+
+    #define PIN_TRACK_A1 32
+    #define PIN_TRACK_A2 33
+    #define PIN_TRACK_B1 25
+    #define PIN_TRACK_B2 26
+
+    #define PIN_POWER 2
+
+    #define PIN_CANNON 4
+  #else
+    #error "Unsuppored Env."
+  #endif
+
+#endif
 
 #define CHANNEL_A1 12
 #define CHANNEL_A2 13
@@ -150,12 +173,22 @@ void notify()
   }
   if (Ps3.event.button_down.r1) {
     Serial.println("R1");
+#ifdef BUILD_ENV_V1
+    rightArmAngle = min(rightArmAngle + angleStep, center + 45);
+#endif
+#ifdef BUILD_ENV_V2
     rightArmAngle = max(rightArmAngle - angleStep, center - 45);
+#endif
     servoRightArm.write(rightArmAngle);
   }
   if (Ps3.event.button_down.r2) {
     Serial.println("R2");
+#ifdef BUILD_ENV_V1
+    rightArmAngle = max(rightArmAngle - angleStep, center - 45);
+#endif
+#ifdef BUILD_ENV_V2
     rightArmAngle = min(rightArmAngle + angleStep, center + 45);
+#endif
     servoRightArm.write(rightArmAngle);
   }
 
@@ -275,6 +308,7 @@ void setup() {
   
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
   Serial.begin(115200);
+
   init();
   initPs3();
 
