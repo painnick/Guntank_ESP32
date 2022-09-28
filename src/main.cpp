@@ -139,7 +139,9 @@ void notify()
   if ((Ps3.event.button_down.square) || (Ps3.event.button_down.triangle)) {
     dfmp3.playMp3FolderTrack(2);
 
+#ifndef BUILD_ENV_V1
     digitalWrite(PIN_CANNON, HIGH);
+#endif
 
     // Back
     ledcWrite(CHANNEL_B1, 0);
@@ -148,7 +150,11 @@ void notify()
     ledcWrite(CHANNEL_A1, 0);
     ledcWrite(CHANNEL_A2, 255);
 
-    delay(100);
+#ifdef BUILD_ENV_V1
+    delay(30); // N30
+#else
+    delay(100); // N20
+#endif
 
     ledcWrite(CHANNEL_B1, 0);
     ledcWrite(CHANNEL_B2, 0);
@@ -157,7 +163,9 @@ void notify()
     ledcWrite(CHANNEL_A2, 0);
 
     delay(300);
+#ifndef BUILD_ENV_V1
     digitalWrite(PIN_CANNON, LOW);
+#endif
   }
 
 
