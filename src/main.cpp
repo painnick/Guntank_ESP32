@@ -93,7 +93,11 @@ void init() {
 
   servoBody.attach(PIN_BODY, 500, 2400);
   servoLeftArm.attach(PIN_LEFT_ARM, 500, 2400);
+#ifndef BUILD_ENV_V2  
   servoRightArm.attach(PIN_RIGHT_ARM, 500, 2400);
+#else
+  servoRightArm.attach(PIN_RIGHT_ARM, 800, 2200);
+#endif
 
   servoBody.write(center);
   servoLeftArm.write(center);
