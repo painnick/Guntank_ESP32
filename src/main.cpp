@@ -94,8 +94,10 @@ void init() {
   servoBody.attach(PIN_BODY, 500, 2400);
   servoLeftArm.attach(PIN_LEFT_ARM, 500, 2400);
 #ifndef BUILD_ENV_V2  
-  servoRightArm.attach(PIN_RIGHT_ARM, 500, 2400);
+  // https://ko.aliexpress.com/item/1005002460000775.html
 #else
+  // https://ko.aliexpress.com/item/1005001284384678.html
+  // Max travel : 145 degree(800->2200ms)
   servoRightArm.attach(PIN_RIGHT_ARM, 800, 2200);
 #endif
 
