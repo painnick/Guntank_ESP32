@@ -1,5 +1,7 @@
 #include <Arduino.h>
 
+#include "esp_log.h"
+
 #include <Ps3Controller.h>
 #include <ESP32Servo.h>
 
@@ -7,6 +9,8 @@
 #include "soc/rtc_cntl_reg.h"    // disable brownout problems
 
 #include "DFMiniMp3.h"
+
+#define MAIN_TAG "Main"
 
 // These are all GPIO pins on the ESP32
 // Recommended pins include 2,4,12-19,21-23,25-27,32-33
@@ -87,6 +91,8 @@ bool squarePress = false;
 bool crossPress = false;
 
 void init() {
+  ESP_LOGI(MAIN_TAG, "Init.(Internal)");
+
   bodyAngle = center;
   leftArmAngle = center;
   rightArmAngle = center;
@@ -113,6 +119,19 @@ void init() {
   dfmp3.playMp3FolderTrack(3);
 }
 
+void reset() {
+  ESP_LOGI(MAIN_TAG, "Reset");
+  bodyAngle = center;
+  leftArmAngle = center;
+  rightArmAngle = center;
+
+  servoBody.write(center);
+  servoLeftArm.write(center);
+  servoRightArm.write(center);
+
+  dfmp3.playMp3FolderTrack(3);
+}
+
 void fire(int pin) {
   for (int i = 0; i < 4; i ++) {
     digitalWrite(pin, HIGH);
@@ -127,7 +146,8 @@ void notify()
 {
   // RESET
   if (Ps3.event.button_down.start) {
-    init();
+    ESP_LOGI(MAIN_TAG, "Start(Reset)");
+    reset();
   }
 
   // Gatling
@@ -135,14 +155,17 @@ void notify()
     dfmp3.playMp3FolderTrack(1);
   }
   if (Ps3.event.button_down.cross) {
+    ESP_LOGI(MAIN_TAG, "Cross(Fire L)");
     fire(PIN_LEFT_GUN);
   }
   if (Ps3.event.button_down.circle) {
+    ESP_LOGI(MAIN_TAG, "Circle(Fire R)");
     fire(PIN_RIGHT_GUN);
   }
 
   // Cannon
   if ((Ps3.event.button_down.square) || (Ps3.event.button_down.triangle)) {
+    ESP_LOGI(MAIN_TAG, "Square or Triangle(Cannon)");
     dfmp3.playMp3FolderTrack(2);
 
 #ifndef BUILD_ENV_V1
@@ -176,17 +199,17 @@ void notify()
 
 
   if (Ps3.event.button_down.l1) {
-    Serial.println("L1");
+    ESP_LOGD(MAIN_TAG, "L1(Left Arm Up)");
     leftArmAngle = min(leftArmAngle + angleStep, center + 45);
     servoLeftArm.write(leftArmAngle);
   }
   if (Ps3.event.button_down.l2) {
-    Serial.println("L2");
+    ESP_LOGD(MAIN_TAG, "L2(Left Arm Down)");
     leftArmAngle = max(leftArmAngle - angleStep, center - 45);
     servoLeftArm.write(leftArmAngle);
   }
   if (Ps3.event.button_down.r1) {
-    Serial.println("R1");
+    ESP_LOGD(MAIN_TAG, "R1(Right Arm Up)");
 #ifdef BUILD_ENV_V1
     rightArmAngle = min(rightArmAngle + angleStep, center + 45);
 #endif
@@ -196,7 +219,7 @@ void notify()
     servoRightArm.write(rightArmAngle);
   }
   if (Ps3.event.button_down.r2) {
-    Serial.println("R2");
+    ESP_LOGD(MAIN_TAG, "R2(Right Arm Down)");
 #ifdef BUILD_ENV_V1
     rightArmAngle = max(rightArmAngle - angleStep, center - 45);
 #endif
@@ -208,22 +231,24 @@ void notify()
 
   // Body
   if (Ps3.event.button_down.left) {
-    Serial.println("Left");
+    ESP_LOGD(MAIN_TAG, "Left(Body)");
     bodyAngle = min(bodyAngle + 5, 180);
     servoBody.write(bodyAngle);
   }
   if (Ps3.event.button_down.right) {
-    Serial.println("Right");
+    ESP_LOGD(MAIN_TAG, "Right(Body)");
     bodyAngle = max(bodyAngle - 5, 0);
     servoBody.write(bodyAngle);
   }
 
   // Volume
   if (Ps3.event.analog_changed.button.up) {
+    ESP_LOGD(MAIN_TAG, "Up(Volume)");
     volume = min(volume + 2, MAX_VOLUME);
     dfmp3.setVolume(volume);
   }
   if (Ps3.event.analog_changed.button.down) {
+    ESP_LOGD(MAIN_TAG, "Down(Volume)");
     volume = max(volume - 2, 0);
     dfmp3.setVolume(volume);
   }
@@ -235,10 +260,12 @@ void notify()
     ledcWrite(CHANNEL_B2, 0);
   } else {
     if (Ps3.event.analog_changed.stick.ly < -10) {
+      ESP_LOGD(MAIN_TAG, "Stick(L) Forward");
       ledcWrite(CHANNEL_B1, absLy * 4);
       ledcWrite(CHANNEL_B2, 0);
     }
     else if (Ps3.event.analog_changed.stick.ly > 10) {
+      ESP_LOGD(MAIN_TAG, "Stick(L) Backward");
       ledcWrite(CHANNEL_B1, 0);
       ledcWrite(CHANNEL_B2, absLy * 4);
     }
@@ -250,10 +277,12 @@ void notify()
     ledcWrite(CHANNEL_A2, 0);    
   } else {
     if (Ps3.event.analog_changed.stick.ry < -10) {
+      ESP_LOGD(MAIN_TAG, "Stick(R) Forward");
       ledcWrite(CHANNEL_A1, absRy * 4);
       ledcWrite(CHANNEL_A2, 0);
     }
     else if (Ps3.event.analog_changed.stick.ry > 10) {
+      ESP_LOGD(MAIN_TAG, "Stick(R) Backward");
       ledcWrite(CHANNEL_A1, 0);
       ledcWrite(CHANNEL_A2, absRy * 4);
     }
@@ -264,6 +293,7 @@ void onConnect();
 void onDisconnect();
 
 void initPs3() {
+  ESP_LOGI(MAIN_TAG, "Init. PS3 Wireless Controller");
   Ps3.attach(notify);
   Ps3.attachOnConnect(onConnect);
   Ps3.attachOnDisconnect(onDisconnect);
@@ -271,14 +301,13 @@ void initPs3() {
 }
 
 void onConnect() {
-  Serial.println("Connected");
+  ESP_LOGI(MAIN_TAG, "Connected");
 
   String address = Ps3.getAddress();
 
-  Serial.print("The ESP32's Bluetooth MAC address is: ");
-  Serial.println(address);
+  ESP_LOGI(MAIN_TAG, "The ESP32's Bluetooth MAC address is: %s", address.c_str());
 
-  init();
+  reset();
 
   servoBody.attach(PIN_BODY, 500, 2400);
   servoLeftArm.attach(PIN_LEFT_ARM, 500, 2400);
@@ -288,37 +317,35 @@ void onConnect() {
   pinMode(PIN_RIGHT_GUN, OUTPUT);
 
 
-  Serial.printf("Setup CHANNEL_A1 %d\n", CHANNEL_A1);
+  ESP_LOGD(MAIN_TAG, "Setup CHANNEL_A1 %d",  CHANNEL_A1);
   ledcSetup(CHANNEL_A1, 5000, 7); // 0~127
-  Serial.printf("Setup CHANNEL_A2 %d\n", CHANNEL_A2);
+  ESP_LOGD(MAIN_TAG, "Setup CHANNEL_A2 %d", CHANNEL_A2);
   ledcSetup(CHANNEL_A2, 5000, 7); // 0~127
-  Serial.printf("Setup CHANNEL_B1 %d\n", CHANNEL_B1);
+  ESP_LOGD(MAIN_TAG, "Setup CHANNEL_B1 %d", CHANNEL_B1);
   ledcSetup(CHANNEL_B1, 5000, 7); // 0~127
-  Serial.printf("Setup CHANNEL_B2 %d\n", CHANNEL_B2);
+  ESP_LOGD(MAIN_TAG, "Setup CHANNEL_B2 %d", CHANNEL_B2);
   ledcSetup(CHANNEL_B2, 5000, 7); // 0~127
 
-  Serial.printf("Attach CHANNEL_A1 %d\n", PIN_TRACK_A1);
+  ESP_LOGD(MAIN_TAG, "Attach PIN_TRACK_A1 %d", PIN_TRACK_A1);
   ledcAttachPin(PIN_TRACK_A1, CHANNEL_A1);
-  Serial.printf("Attach CHANNEL_A2 %d\n", PIN_TRACK_A2);
+  ESP_LOGD(MAIN_TAG, "Attach PIN_TRACK_A2 %d", PIN_TRACK_A2);
   ledcAttachPin(PIN_TRACK_A2, CHANNEL_A2);
-  Serial.printf("Attach CHANNEL_B1 %d\n", PIN_TRACK_B1);
+  ESP_LOGD(MAIN_TAG, "Attach PIN_TRACK_B1 %d", PIN_TRACK_B1);
   ledcAttachPin(PIN_TRACK_B1, CHANNEL_B1);
-  Serial.printf("Attach CHANNEL_B2 %d\n", PIN_TRACK_B2);
+  ESP_LOGD(MAIN_TAG, "Attach PIN_TRACK_B2 %d", PIN_TRACK_B2);
   ledcAttachPin(PIN_TRACK_B2, CHANNEL_B2);
-
-  init();
 
   dfmp3.playMp3FolderTrack(3);
 }
 
 void onDisconnect() {
-  Serial.println("Disconnected");
+  ESP_LOGI(MAIN_TAG, "Disconnected");
   Ps3.end();
   initPs3();
 }
 
 void setup() {
-  esp_log_level_set("*", ESP_LOG_DEBUG);
+  // esp_log_level_set("*", ESP_LOG_DEBUG);
   
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
   Serial.begin(115200);
@@ -350,65 +377,54 @@ class Mp3Notify
 public:
   static void PrintlnSourceAction(DfMp3_PlaySources source, const char *action)
   {
-#ifdef _DEBUG
-    if (source & DfMp3_PlaySources_Sd)
-    {
-      Serial.print("SD Card, ");
+    if (source & DfMp3_PlaySources_Sd) {
+      ESP_LOGD(MAIN_TAG, "SD Card, %s", action);
     }
-    if (source & DfMp3_PlaySources_Usb)
-    {
-      Serial.print("USB Disk, ");
+    if (source & DfMp3_PlaySources_Usb) {
+      ESP_LOGD(MAIN_TAG, "USB Disk, %s", action);
     }
-    if (source & DfMp3_PlaySources_Flash)
-    {
-      Serial.print("Flash, ");
+    if (source & DfMp3_PlaySources_Flash) {
+      ESP_LOGD(MAIN_TAG, "Flash, %s", action);
     }
-    Serial.println(action);
-#endif
   }
   static void OnError(DfMp3 &mp3, uint16_t errorCode)
   {
-#ifdef _DEBUG
     // see DfMp3_Error for code meaning
     Serial.println();
     Serial.print("Com Error ");
     switch (errorCode)
     {
     case DfMp3_Error_Busy:
-      Serial.println("Busy");
+      ESP_LOGE(MAIN_TAG, "Com Error - Busy");
       break;
     case DfMp3_Error_Sleeping:
-      Serial.println("Sleeping");
+      ESP_LOGE(MAIN_TAG, "Com Error - Sleeping");
       break;
     case DfMp3_Error_SerialWrongStack:
-      Serial.println("Serial Wrong Stack");
+      ESP_LOGE(MAIN_TAG, "Com Error - Serial Wrong Stack");
       break;
 
     case DfMp3_Error_RxTimeout:
-      Serial.println("Rx Timeout!!!");
+      ESP_LOGE(MAIN_TAG, "Com Error - Rx Timeout!!!");
       break;
     case DfMp3_Error_PacketSize:
-      Serial.println("Wrong Packet Size!!!");
+      ESP_LOGE(MAIN_TAG, "Com Error - Wrong Packet Size!!!");
       break;
     case DfMp3_Error_PacketHeader:
-      Serial.println("Wrong Packet Header!!!");
+      ESP_LOGE(MAIN_TAG, "Com Error - Wrong Packet Header!!!");
       break;
     case DfMp3_Error_PacketChecksum:
-      Serial.println("Wrong Packet Checksum!!!");
+      ESP_LOGE(MAIN_TAG, "Com Error - Wrong Packet Checksum!!!");
       break;
 
     default:
-      Serial.println(errorCode, HEX);
+      ESP_LOGE(MAIN_TAG, "Com Error - %d", errorCode);
       break;
     }
-#endif
   }
   static void OnPlayFinished(DfMp3 &mp3, DfMp3_PlaySources source, uint16_t track)
   {
-#ifdef _DEBUG
-    Serial.print("Play finished for #");
-    Serial.println(track);
-#endif
+    ESP_LOGD(MAIN_TAG, "Play finished for #%d", track);
   }
   static void OnPlaySourceOnline(DfMp3 &mp3, DfMp3_PlaySources source)
   {
