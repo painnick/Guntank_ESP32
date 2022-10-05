@@ -67,6 +67,8 @@
 
 #define MAX_VOLUME 18
 
+#define STICK_THRESHOLD 125
+
 Servo servoBody;
 Servo servoLeftArm, servoRightArm;
 
@@ -179,11 +181,7 @@ void notify()
     ledcWrite(CHANNEL_A1, 0);
     ledcWrite(CHANNEL_A2, 255);
 
-#ifdef BUILD_ENV_V1
     delay(30); // N30
-#else
-    delay(100); // N20
-#endif
 
     ledcWrite(CHANNEL_B1, 0);
     ledcWrite(CHANNEL_B2, 0);
@@ -255,34 +253,34 @@ void notify()
 
   // Track
   int absLy = abs(Ps3.event.analog_changed.stick.ly);
-  if (absLy < 10) {
+  if (absLy < STICK_THRESHOLD) {
     ledcWrite(CHANNEL_B1, 0);
     ledcWrite(CHANNEL_B2, 0);
   } else {
-    if (Ps3.event.analog_changed.stick.ly < -10) {
-      ESP_LOGD(MAIN_TAG, "Stick(L) Forward");
+    if (Ps3.event.analog_changed.stick.ly < -STICK_THRESHOLD) {
+      ESP_LOGD(MAIN_TAG, "Stick(L) Forward %d", absLy);
       ledcWrite(CHANNEL_B1, absLy * 4);
       ledcWrite(CHANNEL_B2, 0);
     }
-    else if (Ps3.event.analog_changed.stick.ly > 10) {
-      ESP_LOGD(MAIN_TAG, "Stick(L) Backward");
+    else if (Ps3.event.analog_changed.stick.ly > STICK_THRESHOLD) {
+      ESP_LOGD(MAIN_TAG, "Stick(L) Backward %d", absLy);
       ledcWrite(CHANNEL_B1, 0);
       ledcWrite(CHANNEL_B2, absLy * 4);
     }
   }
 
   int absRy = abs(Ps3.event.analog_changed.stick.ry);
-  if (absRy < 10) {
+  if (absRy < STICK_THRESHOLD) {
     ledcWrite(CHANNEL_A1, 0);
     ledcWrite(CHANNEL_A2, 0);    
   } else {
-    if (Ps3.event.analog_changed.stick.ry < -10) {
-      ESP_LOGD(MAIN_TAG, "Stick(R) Forward");
+    if (Ps3.event.analog_changed.stick.ry < -STICK_THRESHOLD) {
+      ESP_LOGD(MAIN_TAG, "Stick(R) Forward %d", absRy);
       ledcWrite(CHANNEL_A1, absRy * 4);
       ledcWrite(CHANNEL_A2, 0);
     }
-    else if (Ps3.event.analog_changed.stick.ry > 10) {
-      ESP_LOGD(MAIN_TAG, "Stick(R) Backward");
+    else if (Ps3.event.analog_changed.stick.ry > STICK_THRESHOLD) {
+      ESP_LOGD(MAIN_TAG, "Stick(R) Backward %d", absRy);
       ledcWrite(CHANNEL_A1, 0);
       ledcWrite(CHANNEL_A2, absRy * 4);
     }
@@ -318,13 +316,13 @@ void onConnect() {
 
 
   ESP_LOGD(MAIN_TAG, "Setup CHANNEL_A1 %d",  CHANNEL_A1);
-  ledcSetup(CHANNEL_A1, 5000, 7); // 0~127
+  ledcSetup(CHANNEL_A1, 1000, 7); // 0~127
   ESP_LOGD(MAIN_TAG, "Setup CHANNEL_A2 %d", CHANNEL_A2);
-  ledcSetup(CHANNEL_A2, 5000, 7); // 0~127
+  ledcSetup(CHANNEL_A2, 1000, 7); // 0~127
   ESP_LOGD(MAIN_TAG, "Setup CHANNEL_B1 %d", CHANNEL_B1);
-  ledcSetup(CHANNEL_B1, 5000, 7); // 0~127
+  ledcSetup(CHANNEL_B1, 1000, 7); // 0~127
   ESP_LOGD(MAIN_TAG, "Setup CHANNEL_B2 %d", CHANNEL_B2);
-  ledcSetup(CHANNEL_B2, 5000, 7); // 0~127
+  ledcSetup(CHANNEL_B2, 1000, 7); // 0~127
 
   ESP_LOGD(MAIN_TAG, "Attach PIN_TRACK_A1 %d", PIN_TRACK_A1);
   ledcAttachPin(PIN_TRACK_A1, CHANNEL_A1);
