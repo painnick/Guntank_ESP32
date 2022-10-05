@@ -67,7 +67,7 @@
 
 #define MAX_VOLUME 18
 
-#define STICK_THRESHOLD 125
+#define STICK_THRESHOLD 20
 
 Servo servoBody;
 Servo servoLeftArm, servoRightArm;
@@ -259,13 +259,13 @@ void notify()
   } else {
     if (Ps3.event.analog_changed.stick.ly < -STICK_THRESHOLD) {
       ESP_LOGD(MAIN_TAG, "Stick(L) Forward %d", absLy);
-      ledcWrite(CHANNEL_B1, absLy * 4);
+      ledcWrite(CHANNEL_B1, absLy * 2);
       ledcWrite(CHANNEL_B2, 0);
     }
     else if (Ps3.event.analog_changed.stick.ly > STICK_THRESHOLD) {
       ESP_LOGD(MAIN_TAG, "Stick(L) Backward %d", absLy);
       ledcWrite(CHANNEL_B1, 0);
-      ledcWrite(CHANNEL_B2, absLy * 4);
+      ledcWrite(CHANNEL_B2, absLy * 2);
     }
   }
 
@@ -276,13 +276,13 @@ void notify()
   } else {
     if (Ps3.event.analog_changed.stick.ry < -STICK_THRESHOLD) {
       ESP_LOGD(MAIN_TAG, "Stick(R) Forward %d", absRy);
-      ledcWrite(CHANNEL_A1, absRy * 4);
+      ledcWrite(CHANNEL_A1, absRy * 2);
       ledcWrite(CHANNEL_A2, 0);
     }
     else if (Ps3.event.analog_changed.stick.ry > STICK_THRESHOLD) {
       ESP_LOGD(MAIN_TAG, "Stick(R) Backward %d", absRy);
       ledcWrite(CHANNEL_A1, 0);
-      ledcWrite(CHANNEL_A2, absRy * 4);
+      ledcWrite(CHANNEL_A2, absRy * 2);
     }
   }
 }
