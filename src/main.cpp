@@ -71,7 +71,7 @@
 
 #define TRACK_MOTOR_RESOLUTION 8
 
-#define TRACK_MOTOR_MAP(val) (map(val, 0, 127, pow(2, TRACK_MOTOR_RESOLUTION) / 10, pow(2, TRACK_MOTOR_RESOLUTION) - 1))
+#define TRACK_MOTOR_MAP(val, scale) (map(val, 0, 127, 0, (pow(2.0, TRACK_MOTOR_RESOLUTION) * (scale)) - 1))
 
 Servo servoBody;
 Servo servoLeftArm, servoRightArm;
@@ -148,6 +148,7 @@ void fire(int pin) {
 }
 
 int battery = 0;
+int sumL = 0, sumR = 0;
 void notify()
 {
   // RESET
@@ -256,37 +257,48 @@ void notify()
   }
 
   // Track
+  int duty = 0;
   int absLy = abs(Ps3.event.analog_changed.stick.ly);
   if (absLy < STICK_THRESHOLD) {
+    sumL = 0;
     ledcWrite(CHANNEL_B1, 0);
     ledcWrite(CHANNEL_B2, 0);
   } else {
     if (Ps3.event.analog_changed.stick.ly < -STICK_THRESHOLD) {
-      ESP_LOGD(MAIN_TAG, "Stick(L) Forward %d", absLy);
-      ledcWrite(CHANNEL_B1, TRACK_MOTOR_MAP(absLy));
+      sumL = min(++sumL, 100);
+      duty = TRACK_MOTOR_MAP(absLy, sumL < 30 ? 0.7 : 1);
+      ESP_LOGD(MAIN_TAG, "Stick(L) Forward %d, %d, %d", absLy, sumL, duty);
+      ledcWrite(CHANNEL_B1, duty);
       ledcWrite(CHANNEL_B2, 0);
     }
     else if (Ps3.event.analog_changed.stick.ly > STICK_THRESHOLD) {
-      ESP_LOGD(MAIN_TAG, "Stick(L) Backward %d", absLy);
+      sumL = min(++sumL, 100);
+      duty = TRACK_MOTOR_MAP(absLy, sumL < 30 ? 0.7 : 1);
+      ESP_LOGD(MAIN_TAG, "Stick(L) Backward %d, %d, %d", absLy, sumL, duty);
       ledcWrite(CHANNEL_B1, 0);
-      ledcWrite(CHANNEL_B2, TRACK_MOTOR_MAP(absLy));
+      ledcWrite(CHANNEL_B2, duty);
     }
   }
 
   int absRy = abs(Ps3.event.analog_changed.stick.ry);
   if (absRy < STICK_THRESHOLD) {
+    sumR = 0;
     ledcWrite(CHANNEL_A1, 0);
     ledcWrite(CHANNEL_A2, 0);    
   } else {
     if (Ps3.event.analog_changed.stick.ry < -STICK_THRESHOLD) {
-      ESP_LOGD(MAIN_TAG, "Stick(R) Forward %d", absRy);
-      ledcWrite(CHANNEL_A1, TRACK_MOTOR_MAP(absRy));
+      sumR = min(++sumR, 100);
+      duty = TRACK_MOTOR_MAP(absRy, sumR < 30 ? 0.7 : 1);
+      ESP_LOGD(MAIN_TAG, "Stick(R) Forward %d, %d, %d", absRy, sumR, duty);
+      ledcWrite(CHANNEL_A1, duty);
       ledcWrite(CHANNEL_A2, 0);
     }
     else if (Ps3.event.analog_changed.stick.ry > STICK_THRESHOLD) {
-      ESP_LOGD(MAIN_TAG, "Stick(R) Backward %d", absRy);
+      sumR = min(++sumR, 100);
+      duty = TRACK_MOTOR_MAP(absRy, sumR < 30 ? 0.7 : 1);
+      ESP_LOGD(MAIN_TAG, "Stick(R) Backward %d, %d, %d", absRy, sumR, duty);
       ledcWrite(CHANNEL_A1, 0);
-      ledcWrite(CHANNEL_A2, TRACK_MOTOR_MAP(absRy));
+      ledcWrite(CHANNEL_A2, duty);
     }
   }
 }
