@@ -69,6 +69,10 @@
 
 #define STICK_THRESHOLD 20
 
+#define TRACK_MOTOR_RESOLUTION 8
+
+#define TRACK_MOTOR_MAP(val) (map(val, 0, 127, pow(2, TRACK_MOTOR_RESOLUTION) / 10, pow(2, TRACK_MOTOR_RESOLUTION) - 1))
+
 Servo servoBody;
 Servo servoLeftArm, servoRightArm;
 
@@ -176,10 +180,10 @@ void notify()
 
     // Back
     ledcWrite(CHANNEL_B1, 0);
-    ledcWrite(CHANNEL_B2, 255);
+    ledcWrite(CHANNEL_B2, pow(2, TRACK_MOTOR_RESOLUTION) - 1);
 
     ledcWrite(CHANNEL_A1, 0);
-    ledcWrite(CHANNEL_A2, 255);
+    ledcWrite(CHANNEL_A2, pow(2, TRACK_MOTOR_RESOLUTION) - 1);
 
     delay(30); // N30
 
@@ -259,13 +263,13 @@ void notify()
   } else {
     if (Ps3.event.analog_changed.stick.ly < -STICK_THRESHOLD) {
       ESP_LOGD(MAIN_TAG, "Stick(L) Forward %d", absLy);
-      ledcWrite(CHANNEL_B1, absLy * 2);
+      ledcWrite(CHANNEL_B1, TRACK_MOTOR_MAP(absLy));
       ledcWrite(CHANNEL_B2, 0);
     }
     else if (Ps3.event.analog_changed.stick.ly > STICK_THRESHOLD) {
       ESP_LOGD(MAIN_TAG, "Stick(L) Backward %d", absLy);
       ledcWrite(CHANNEL_B1, 0);
-      ledcWrite(CHANNEL_B2, absLy * 2);
+      ledcWrite(CHANNEL_B2, TRACK_MOTOR_MAP(absLy));
     }
   }
 
@@ -276,13 +280,13 @@ void notify()
   } else {
     if (Ps3.event.analog_changed.stick.ry < -STICK_THRESHOLD) {
       ESP_LOGD(MAIN_TAG, "Stick(R) Forward %d", absRy);
-      ledcWrite(CHANNEL_A1, absRy * 2);
+      ledcWrite(CHANNEL_A1, TRACK_MOTOR_MAP(absRy));
       ledcWrite(CHANNEL_A2, 0);
     }
     else if (Ps3.event.analog_changed.stick.ry > STICK_THRESHOLD) {
       ESP_LOGD(MAIN_TAG, "Stick(R) Backward %d", absRy);
       ledcWrite(CHANNEL_A1, 0);
-      ledcWrite(CHANNEL_A2, absRy * 2);
+      ledcWrite(CHANNEL_A2, TRACK_MOTOR_MAP(absRy));
     }
   }
 }
@@ -343,8 +347,6 @@ void onDisconnect() {
 }
 
 void setup() {
-  // esp_log_level_set("*", ESP_LOG_DEBUG);
-  
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
   Serial.begin(115200);
 
