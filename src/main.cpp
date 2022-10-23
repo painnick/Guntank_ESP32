@@ -60,16 +60,23 @@
 
 #endif
 
-#define CHANNEL_A1 12
-#define CHANNEL_A2 13
-#define CHANNEL_B1 14
-#define CHANNEL_B2 15
+#define CHANNEL_RIGHT1 12
+#define CHANNEL_RIGHT2 13
+#define CHANNEL_LEFT1 14
+#define CHANNEL_LEFT2 15
 
 #define MAX_VOLUME 18
 
 #define STICK_THRESHOLD 20
 
 #define TRACK_MOTOR_RESOLUTION 8
+
+#define FB_FORWARD 1
+#define FB_CENTER 2
+#define FB_BACKWARD 3
+#define LR_LEFT 4
+#define LR_MIDDLE 5
+#define LR_RIGHT 6
 
 Servo servoBody;
 Servo servoLeftArm, servoRightArm;
@@ -97,6 +104,9 @@ bool crossPress = false;
 int GearLevel = 0;
 int TRACK_SPEED_SET[] = {63, 255};
 int TRACK_SPEED = TRACK_SPEED_SET[0];
+
+bool useAccelerometer = true;
+unsigned long lastTime = 0;
 
 void init() {
   ESP_LOGI(MAIN_TAG, "Init.(Internal)");
@@ -128,6 +138,8 @@ void init() {
 }
 
 void reset() {
+  useAccelerometer = !useAccelerometer;
+
   ESP_LOGI(MAIN_TAG, "Reset");
   bodyAngle = center;
   leftArmAngle = center;
@@ -188,19 +200,19 @@ void notify()
 #endif
 
     // Back
-    ledcWrite(CHANNEL_B1, 0);
-    ledcWrite(CHANNEL_B2, TRACK_SPEED);
+    ledcWrite(CHANNEL_LEFT1, 0);
+    ledcWrite(CHANNEL_LEFT2, TRACK_SPEED);
 
-    ledcWrite(CHANNEL_A1, 0);
-    ledcWrite(CHANNEL_A2, TRACK_SPEED);
+    ledcWrite(CHANNEL_RIGHT1, 0);
+    ledcWrite(CHANNEL_RIGHT2, TRACK_SPEED);
 
     delay(30); // N30
 
-    ledcWrite(CHANNEL_B1, 0);
-    ledcWrite(CHANNEL_B2, 0);
+    ledcWrite(CHANNEL_LEFT1, 0);
+    ledcWrite(CHANNEL_LEFT2, 0);
 
-    ledcWrite(CHANNEL_A1, 0);
-    ledcWrite(CHANNEL_A2, 0);
+    ledcWrite(CHANNEL_RIGHT1, 0);
+    ledcWrite(CHANNEL_RIGHT2, 0);
 
     delay(300);
 #ifndef BUILD_ENV_V1
@@ -208,6 +220,86 @@ void notify()
 #endif
   }
 
+  if (useAccelerometer) {
+    unsigned long currentTime = millis();
+
+    if (currentTime - lastTime > 100) {
+      int forwardOrBackward = FB_CENTER;
+      if (Ps3.data.sensor.accelerometer.y < -50) {
+        // ESP_LOGD(MAIN_TAG, "Accelerometer Y(Forward) %3d", Ps3.data.sensor.accelerometer.y);
+        forwardOrBackward = FB_FORWARD;
+      }
+      else if (Ps3.data.sensor.accelerometer.y > 60) {
+        // ESP_LOGD(MAIN_TAG, "Accelerometer Y(Backrward) %3d", Ps3.data.sensor.accelerometer.y);
+        forwardOrBackward = FB_BACKWARD;
+      }
+
+      int leftOrRight = LR_MIDDLE;
+      if (Ps3.data.sensor.accelerometer.x > +30) {
+        // ESP_LOGD(MAIN_TAG, "Accelerometer X(Left) %3d", Ps3.data.sensor.accelerometer.x);
+        leftOrRight = LR_LEFT;
+      }
+      else if (Ps3.data.sensor.accelerometer.x < -30) {
+        // ESP_LOGD(MAIN_TAG, "Accelerometer X(Right) %3d", Ps3.data.sensor.accelerometer.x);
+        leftOrRight = LR_RIGHT;
+      }
+
+      if (forwardOrBackward == FB_FORWARD) {
+        if (leftOrRight == LR_LEFT) {
+          ESP_LOGD(MAIN_TAG, "Accelerometer F / L");
+
+          ledcWrite(CHANNEL_LEFT1, TRACK_SPEED);
+          ledcWrite(CHANNEL_LEFT2, 0);
+          ledcWrite(CHANNEL_RIGHT1, TRACK_SPEED / 4);
+          ledcWrite(CHANNEL_RIGHT2, 0);
+        } else if (leftOrRight == LR_RIGHT) {
+          ESP_LOGD(MAIN_TAG, "Accelerometer F / R");
+
+          ledcWrite(CHANNEL_LEFT1, TRACK_SPEED / 4);
+          ledcWrite(CHANNEL_LEFT2, 0);
+          ledcWrite(CHANNEL_RIGHT1, TRACK_SPEED);
+          ledcWrite(CHANNEL_RIGHT2, 0);
+        } else if (leftOrRight == LR_MIDDLE) {
+          ESP_LOGD(MAIN_TAG, "Accelerometer F");
+
+          ledcWrite(CHANNEL_LEFT1, TRACK_SPEED);
+          ledcWrite(CHANNEL_LEFT2, 0);
+          ledcWrite(CHANNEL_RIGHT1, TRACK_SPEED);
+          ledcWrite(CHANNEL_RIGHT2, 0);
+        }
+      } else if (forwardOrBackward == FB_BACKWARD) {
+        if (leftOrRight == LR_LEFT) {
+          ESP_LOGD(MAIN_TAG, "Accelerometer B / L");
+
+          ledcWrite(CHANNEL_LEFT1, 0);
+          ledcWrite(CHANNEL_LEFT2, TRACK_SPEED);
+          ledcWrite(CHANNEL_RIGHT1, 0);
+          ledcWrite(CHANNEL_RIGHT2, TRACK_SPEED / 4);
+        } else if (leftOrRight == LR_RIGHT) {
+          ESP_LOGD(MAIN_TAG, "Accelerometer B / R");
+
+          ledcWrite(CHANNEL_LEFT1, 0);
+          ledcWrite(CHANNEL_LEFT2, TRACK_SPEED / 4);
+          ledcWrite(CHANNEL_RIGHT1, 0);
+          ledcWrite(CHANNEL_RIGHT2, TRACK_SPEED);
+        } else if (leftOrRight == LR_MIDDLE) {
+          ESP_LOGD(MAIN_TAG, "Accelerometer B");
+
+          ledcWrite(CHANNEL_LEFT1, 0);
+          ledcWrite(CHANNEL_LEFT2, TRACK_SPEED);
+          ledcWrite(CHANNEL_RIGHT1, 0);
+          ledcWrite(CHANNEL_RIGHT2, TRACK_SPEED);
+        }
+      } else {
+          ledcWrite(CHANNEL_LEFT1, 0);
+          ledcWrite(CHANNEL_LEFT2, 0);
+          ledcWrite(CHANNEL_RIGHT1, 0);
+          ledcWrite(CHANNEL_RIGHT2, 0);
+      }
+
+      lastTime = currentTime;
+    }
+  }
 
   if (Ps3.event.button_down.l1) {
     ESP_LOGD(MAIN_TAG, "L1(Left Arm Up)");
@@ -265,33 +357,35 @@ void notify()
   }
 
   // Track
-  int absLy = abs(Ps3.event.analog_changed.stick.ly);
-  if (absLy < STICK_THRESHOLD) {
-    ledcWrite(CHANNEL_B1, 0);
-    ledcWrite(CHANNEL_B2, 0);
-  } else {
-    if (Ps3.event.analog_changed.stick.ly < -STICK_THRESHOLD) {
-      ledcWrite(CHANNEL_B1, TRACK_SPEED);
-      ledcWrite(CHANNEL_B2, 0);
+  if (!useAccelerometer) {
+    int absLy = abs(Ps3.event.analog_changed.stick.ly);
+    if (absLy < STICK_THRESHOLD) {
+      ledcWrite(CHANNEL_LEFT1, 0);
+      ledcWrite(CHANNEL_LEFT2, 0);
+    } else {
+      if (Ps3.event.analog_changed.stick.ly < -STICK_THRESHOLD) {
+        ledcWrite(CHANNEL_LEFT1, TRACK_SPEED);
+        ledcWrite(CHANNEL_LEFT2, 0);
+      }
+      else if (Ps3.event.analog_changed.stick.ly > STICK_THRESHOLD) {
+        ledcWrite(CHANNEL_LEFT1, 0);
+        ledcWrite(CHANNEL_LEFT2, TRACK_SPEED);
+      }
     }
-    else if (Ps3.event.analog_changed.stick.ly > STICK_THRESHOLD) {
-      ledcWrite(CHANNEL_B1, 0);
-      ledcWrite(CHANNEL_B2, TRACK_SPEED);
-    }
-  }
 
-  int absRy = abs(Ps3.event.analog_changed.stick.ry);
-  if (absRy < STICK_THRESHOLD) {
-    ledcWrite(CHANNEL_A1, 0);
-    ledcWrite(CHANNEL_A2, 0);    
-  } else {
-    if (Ps3.event.analog_changed.stick.ry < -STICK_THRESHOLD) {
-      ledcWrite(CHANNEL_A1, TRACK_SPEED);
-      ledcWrite(CHANNEL_A2, 0);
-    }
-    else if (Ps3.event.analog_changed.stick.ry > STICK_THRESHOLD) {
-      ledcWrite(CHANNEL_A1, 0);
-      ledcWrite(CHANNEL_A2, TRACK_SPEED);
+    int absRy = abs(Ps3.event.analog_changed.stick.ry);
+    if (absRy < STICK_THRESHOLD) {
+      ledcWrite(CHANNEL_RIGHT1, 0);
+      ledcWrite(CHANNEL_RIGHT2, 0);    
+    } else {
+      if (Ps3.event.analog_changed.stick.ry < -STICK_THRESHOLD) {
+        ledcWrite(CHANNEL_RIGHT1, TRACK_SPEED);
+        ledcWrite(CHANNEL_RIGHT2, 0);
+      }
+      else if (Ps3.event.analog_changed.stick.ry > STICK_THRESHOLD) {
+        ledcWrite(CHANNEL_RIGHT1, 0);
+        ledcWrite(CHANNEL_RIGHT2, TRACK_SPEED);
+      }
     }
   }
 }
@@ -324,23 +418,23 @@ void onConnect() {
   pinMode(PIN_RIGHT_GUN, OUTPUT);
 
 
-  ESP_LOGD(MAIN_TAG, "Setup CHANNEL_A1 %d",  CHANNEL_A1);
-  ledcSetup(CHANNEL_A1, 1000, 7); // 0~127
-  ESP_LOGD(MAIN_TAG, "Setup CHANNEL_A2 %d", CHANNEL_A2);
-  ledcSetup(CHANNEL_A2, 1000, 7); // 0~127
-  ESP_LOGD(MAIN_TAG, "Setup CHANNEL_B1 %d", CHANNEL_B1);
-  ledcSetup(CHANNEL_B1, 1000, 7); // 0~127
-  ESP_LOGD(MAIN_TAG, "Setup CHANNEL_B2 %d", CHANNEL_B2);
-  ledcSetup(CHANNEL_B2, 1000, 7); // 0~127
+  ESP_LOGD(MAIN_TAG, "Setup CHANNEL_RIGHT1 %d",  CHANNEL_RIGHT1);
+  ledcSetup(CHANNEL_RIGHT1, 1000, 7); // 0~127
+  ESP_LOGD(MAIN_TAG, "Setup CHANNEL_RIGHT2 %d", CHANNEL_RIGHT2);
+  ledcSetup(CHANNEL_RIGHT2, 1000, 7); // 0~127
+  ESP_LOGD(MAIN_TAG, "Setup CHANNEL_LEFT1 %d", CHANNEL_LEFT1);
+  ledcSetup(CHANNEL_LEFT1, 1000, 7); // 0~127
+  ESP_LOGD(MAIN_TAG, "Setup CHANNEL_LEFT2 %d", CHANNEL_LEFT2);
+  ledcSetup(CHANNEL_LEFT2, 1000, 7); // 0~127
 
   ESP_LOGD(MAIN_TAG, "Attach PIN_TRACK_A1 %d", PIN_TRACK_A1);
-  ledcAttachPin(PIN_TRACK_A1, CHANNEL_A1);
+  ledcAttachPin(PIN_TRACK_A1, CHANNEL_RIGHT1);
   ESP_LOGD(MAIN_TAG, "Attach PIN_TRACK_A2 %d", PIN_TRACK_A2);
-  ledcAttachPin(PIN_TRACK_A2, CHANNEL_A2);
+  ledcAttachPin(PIN_TRACK_A2, CHANNEL_RIGHT2);
   ESP_LOGD(MAIN_TAG, "Attach PIN_TRACK_B1 %d", PIN_TRACK_B1);
-  ledcAttachPin(PIN_TRACK_B1, CHANNEL_B1);
+  ledcAttachPin(PIN_TRACK_B1, CHANNEL_LEFT1);
   ESP_LOGD(MAIN_TAG, "Attach PIN_TRACK_B2 %d", PIN_TRACK_B2);
-  ledcAttachPin(PIN_TRACK_B2, CHANNEL_B2);
+  ledcAttachPin(PIN_TRACK_B2, CHANNEL_LEFT2);
 
   dfmp3.playMp3FolderTrack(3);
 }
