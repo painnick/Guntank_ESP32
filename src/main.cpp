@@ -235,66 +235,50 @@ void notify()
       }
 
       int leftOrRight = LR_MIDDLE;
-      if (Ps3.data.sensor.accelerometer.x > +30) {
+      if (Ps3.data.sensor.accelerometer.x > +45) {
         // ESP_LOGD(MAIN_TAG, "Accelerometer X(Left) %3d", Ps3.data.sensor.accelerometer.x);
         leftOrRight = LR_LEFT;
       }
-      else if (Ps3.data.sensor.accelerometer.x < -30) {
+      else if (Ps3.data.sensor.accelerometer.x < -45) {
         // ESP_LOGD(MAIN_TAG, "Accelerometer X(Right) %3d", Ps3.data.sensor.accelerometer.x);
         leftOrRight = LR_RIGHT;
       }
 
-      if (forwardOrBackward == FB_FORWARD) {
-        if (leftOrRight == LR_LEFT) {
-          ESP_LOGD(MAIN_TAG, "Accelerometer F / L");
+      if (leftOrRight == LR_LEFT) {
+        ESP_LOGD(MAIN_TAG, "Accelerometer F / L");
 
-          ledcWrite(CHANNEL_LEFT1, TRACK_SPEED);
-          ledcWrite(CHANNEL_LEFT2, 0);
-          ledcWrite(CHANNEL_RIGHT1, TRACK_SPEED / 4);
-          ledcWrite(CHANNEL_RIGHT2, 0);
-        } else if (leftOrRight == LR_RIGHT) {
-          ESP_LOGD(MAIN_TAG, "Accelerometer F / R");
+        ledcWrite(CHANNEL_LEFT1, 0);
+        ledcWrite(CHANNEL_LEFT2, 0);
+        ledcWrite(CHANNEL_RIGHT1, TRACK_SPEED_SET[0]);
+        ledcWrite(CHANNEL_RIGHT2, 0);
+      } else if (leftOrRight == LR_RIGHT) {
+        ESP_LOGD(MAIN_TAG, "Accelerometer F / R");
 
-          ledcWrite(CHANNEL_LEFT1, TRACK_SPEED / 4);
-          ledcWrite(CHANNEL_LEFT2, 0);
-          ledcWrite(CHANNEL_RIGHT1, TRACK_SPEED);
-          ledcWrite(CHANNEL_RIGHT2, 0);
-        } else if (leftOrRight == LR_MIDDLE) {
+        ledcWrite(CHANNEL_LEFT1, TRACK_SPEED_SET[0]);
+        ledcWrite(CHANNEL_LEFT2, 0);
+        ledcWrite(CHANNEL_RIGHT1, 0);
+        ledcWrite(CHANNEL_RIGHT2, 0);
+      } else if (leftOrRight == LR_MIDDLE) {
+        if (forwardOrBackward == FB_FORWARD) {
           ESP_LOGD(MAIN_TAG, "Accelerometer F");
 
           ledcWrite(CHANNEL_LEFT1, TRACK_SPEED);
           ledcWrite(CHANNEL_LEFT2, 0);
           ledcWrite(CHANNEL_RIGHT1, TRACK_SPEED);
           ledcWrite(CHANNEL_RIGHT2, 0);
-        }
-      } else if (forwardOrBackward == FB_BACKWARD) {
-        if (leftOrRight == LR_LEFT) {
-          ESP_LOGD(MAIN_TAG, "Accelerometer B / L");
-
-          ledcWrite(CHANNEL_LEFT1, 0);
-          ledcWrite(CHANNEL_LEFT2, TRACK_SPEED);
-          ledcWrite(CHANNEL_RIGHT1, 0);
-          ledcWrite(CHANNEL_RIGHT2, TRACK_SPEED / 4);
-        } else if (leftOrRight == LR_RIGHT) {
-          ESP_LOGD(MAIN_TAG, "Accelerometer B / R");
-
-          ledcWrite(CHANNEL_LEFT1, 0);
-          ledcWrite(CHANNEL_LEFT2, TRACK_SPEED / 4);
-          ledcWrite(CHANNEL_RIGHT1, 0);
-          ledcWrite(CHANNEL_RIGHT2, TRACK_SPEED);
-        } else if (leftOrRight == LR_MIDDLE) {
+        } else if (forwardOrBackward == FB_BACKWARD) {
           ESP_LOGD(MAIN_TAG, "Accelerometer B");
 
           ledcWrite(CHANNEL_LEFT1, 0);
           ledcWrite(CHANNEL_LEFT2, TRACK_SPEED);
           ledcWrite(CHANNEL_RIGHT1, 0);
           ledcWrite(CHANNEL_RIGHT2, TRACK_SPEED);
-        }
-      } else {
+        } else {
           ledcWrite(CHANNEL_LEFT1, 0);
           ledcWrite(CHANNEL_LEFT2, 0);
           ledcWrite(CHANNEL_RIGHT1, 0);
           ledcWrite(CHANNEL_RIGHT2, 0);
+        }
       }
 
       lastTime = currentTime;
