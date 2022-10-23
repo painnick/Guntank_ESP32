@@ -94,7 +94,9 @@ bool triaglePress = false;
 bool squarePress = false;
 bool crossPress = false;
 
-int TRACK_MAX_VAL = pow(2, TRACK_MOTOR_RESOLUTION) - 1;
+int GearLevel = 0;
+int TRACK_SPEED_SET[] = {63, 255};
+int TRACK_SPEED = TRACK_SPEED_SET[0];
 
 void init() {
   ESP_LOGI(MAIN_TAG, "Init.(Internal)");
@@ -156,6 +158,13 @@ void notify()
     reset();
   }
 
+  // Track Speed
+  if (Ps3.event.button_down.select) {
+    GearLevel = (++GearLevel) % 2;
+    TRACK_SPEED = TRACK_SPEED_SET[GearLevel];
+    ESP_LOGI(MAIN_TAG, "Speed(Select) lv.%d - %d", GearLevel, TRACK_SPEED);
+  }
+
   // Gatling
   if ((Ps3.event.button_down.cross) || (Ps3.event.button_down.circle)) {
     dfmp3.playMp3FolderTrack(1);
@@ -180,10 +189,10 @@ void notify()
 
     // Back
     ledcWrite(CHANNEL_B1, 0);
-    ledcWrite(CHANNEL_B2, TRACK_MAX_VAL);
+    ledcWrite(CHANNEL_B2, TRACK_SPEED);
 
     ledcWrite(CHANNEL_A1, 0);
-    ledcWrite(CHANNEL_A2, TRACK_MAX_VAL);
+    ledcWrite(CHANNEL_A2, TRACK_SPEED);
 
     delay(30); // N30
 
@@ -262,12 +271,12 @@ void notify()
     ledcWrite(CHANNEL_B2, 0);
   } else {
     if (Ps3.event.analog_changed.stick.ly < -STICK_THRESHOLD) {
-      ledcWrite(CHANNEL_B1, TRACK_MAX_VAL);
+      ledcWrite(CHANNEL_B1, TRACK_SPEED);
       ledcWrite(CHANNEL_B2, 0);
     }
     else if (Ps3.event.analog_changed.stick.ly > STICK_THRESHOLD) {
       ledcWrite(CHANNEL_B1, 0);
-      ledcWrite(CHANNEL_B2, TRACK_MAX_VAL);
+      ledcWrite(CHANNEL_B2, TRACK_SPEED);
     }
   }
 
@@ -277,12 +286,12 @@ void notify()
     ledcWrite(CHANNEL_A2, 0);    
   } else {
     if (Ps3.event.analog_changed.stick.ry < -STICK_THRESHOLD) {
-      ledcWrite(CHANNEL_A1, TRACK_MAX_VAL);
+      ledcWrite(CHANNEL_A1, TRACK_SPEED);
       ledcWrite(CHANNEL_A2, 0);
     }
     else if (Ps3.event.analog_changed.stick.ry > STICK_THRESHOLD) {
       ledcWrite(CHANNEL_A1, 0);
-      ledcWrite(CHANNEL_A2, TRACK_MAX_VAL);
+      ledcWrite(CHANNEL_A2, TRACK_SPEED);
     }
   }
 }
